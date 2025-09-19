@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eco Education Prototype</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #F4F7F6;
+    }
+    .screen {
+      display: none;
+      min-height: 100vh;
+      padding: 20px;
+      text-align: center;
+    }
+    .active { display: block; }
+    h1 { color: #2E7D32; }
+    input, button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 70%;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    input { border: 1px solid #ccc; }
+    button {
+      background: #43A047;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background: #2E7D32; }
+    .option {
+      margin: 8px auto;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 70%;
+      cursor: pointer;
+    }
+    .option:hover { background: #E8F5E9; }
+    .badge {
+      display: inline-block;
+      margin: 5px;
+      padding: 5px 10px;
+      border-radius: 12px;
+      background: #E8F5E9;
+      color: #2E7D32;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen 1: Choose Role -->
+  <div id="chooseRole" class="screen active">
+    <h1>Eco Education 🌱</h1>
+    <button onclick="chooseRole('student')">Login as Student</button>
+    <button onclick="chooseRole('teacher')">Login as Teacher</button>
+  </div>
+
+  <!-- Screen 2: Login -->
+  <div id="login" class="screen">
+    <h1 id="loginTitle">Login</h1>
+    <input type="text" id="username" placeholder="Enter Username">
+    <input type="password" id="password" placeholder="Enter Password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <!-- Student Dashboard -->
+  <div id="studentDashboard" class="screen">
+    <h1 id="welcomeStudent">Welcome Student 👋</h1>
+    <p>Eco-Points: <span id="ecoPoints">0</span></p>
+    <div id="badges"></div>
+    <button onclick="goTo('lesson1')">📘 Lesson 1: Water Conservation</button>
+    <button onclick="goTo('lesson2')">📘 Lesson 2: Renewable Energy</button>
+    <button onclick="goTo('ecoChallenge')">🌍 Eco-Challenges</button>
+    <button onclick="goTo('leaderboard')">🏆 Leaderboard</button>
+  </div>
+
+  <!-- Teacher Dashboard -->
+  <div id="teacherDashboard" class="screen">
+    <h1>Teacher Dashboard 📊</h1>
+    <h3>Student Scores:</h3>
+    <ul id="scoreList"></ul>
+  </div>
+
+  <!-- Lesson 1 -->
+  <div id="lesson1" class="screen">
+    <h1>Water Conservation 💧</h1>
+    <p>Water is precious. Save it by fixing leaks, rainwater harvesting, mindful use, and protecting rivers.</p>
+    <p>📺 Watch: <a href="https://www.youtube.com/watch?v=1kUE0BZtTRc&authuser=0" target="_blank">Water Conservation Video</a></p>
+    <button onclick="goTo('quiz')">Next → Quiz</button>
+  </div>
+
+  <!-- Lesson 2 -->
+  <div id="lesson2" class="screen">
+    <h1>Renewable Energy ☀️</h1>
+    <p>Renewable energy sources like solar, wind, and hydro are clean and sustainable alternatives to fossil fuels.</p>
+    <p>📺 Watch: <a href="https://www.youtube.com/watch?v=1kUE0BZtTRc&authuser=0" target="_blank">Renewable Energy Video</a></p>
+    <button onclick="goTo('quiz')">Next → Quiz</button>
+  </div>
+
+  <!-- Quiz -->
+  <div id="quiz" class="screen">
+    <h1>Quiz Time 📝</h1>
+    <div id="quizContent"></div>
+  </div>
+
+  <!-- Score Screen -->
+  <div id="scoreScreen" class="screen">
+    <h1>Quiz Result ✅</h1>
+    <p id="scoreText"></p>
+    <button onclick="goTo('studentDashboard')">Back to Dashboard</button>
+  </div>
+
+  <!-- Eco Challenge -->
+  <div id="ecoChallenge" class="screen">
+    <h1>Eco-Challenges 🌍</h1>
+    <p>Complete tasks and earn extra eco-points!</p>
+    <button onclick="completeChallenge('Plant a tree', 20)">🌱 Plant a Tree (+20)</button>
+    <button onclick="completeChallenge('Segregate waste at home', 15)">♻️ Waste Segregation (+15)</button>
+    <button onclick="completeChallenge('Avoid plastic bottles for a week', 10)">🚰 Avoid Plastic Bottles (+10)</button>
+    <button onclick="goTo('studentDashboard')">Back</button>
+  </div>
+
+  <!-- Leaderboard -->
+  <div id="leaderboard" class="screen">
+    <h1>Leaderboard 🏆</h1>
+    <ul id="leaderboardList"></ul>
+    <button onclick="goTo('studentDashboard')">Back</button>
+  </div>
+
+  <script>
+    let role = "";
+    let currentUser = "";
+    let score = 0;
+    let ecoPoints = 0;
+    let currentQuestion = 0;
+
+    // Load scores from localStorage (or empty array if none saved)
+    let scores = JSON.parse(localStorage.getItem("scores")) || [];
+
+    const questions = [
+      {
+        q: "Which of these helps in water conservation?",
+        options: ["Leaving tap open", "Rainwater harvesting", "Wasting water", "Polluting rivers"],
+        answer: 1
+      },
+      {
+        q: "Which of these is a renewable energy source?",
+        options: ["Coal", "Natural Gas", "Solar Power", "Petrol"],
+        answer: 2
+      }
+    ];
+
+    function chooseRole(selectedRole) {
+      role = selectedRole;
+      showScreen("login");
+      document.getElementById("loginTitle").innerText =
+        "Login as " + (role === 'student' ? "Student" : "Teacher");
+    }
+
+    function login() {
+      currentUser = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+
+      if (!currentUser || !pass) {
+        alert("Enter username and password");
+        return;
+      }
+
+      // Restore eco-points if available
+      const existing = scores.find(s => s.name === currentUser);
+      ecoPoints = existing ? existing.points || 0 : 0;
+
+      if (role === 'student') {
+        document.getElementById("welcomeStudent").innerText = "Welcome " + currentUser + " 👋";
+        updateEcoUI();
+        showScreen("studentDashboard");
+      } else {
+        showScreen("teacherDashboard");
+        updateScoreboard();
+      }
+    }
+
+    function goTo(screenId) {
+      showScreen(screenId);
+
+      if (screenId === 'quiz') {
+        currentQuestion = 0;
+        score = 0;
+        loadQuestion();
+      }
+      if (screenId === 'teacherDashboard') {
+        updateScoreboard();
+      }
+      if (screenId === 'leaderboard') {
+        updateLeaderboard();
+      }
+    }
+
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(screenId).classList.add('active');
+    }
+
+    function loadQuestion() {
+      if (currentQuestion < questions.length) {
+        const q = questions[currentQuestion];
+        let html = `<h3>${q.q}</h3>`;
+        q.options.forEach((opt, i) => {
+          html += `<div class='option' onclick='answer(${i})'>${opt}</div>`;
+        });
+        document.getElementById("quizContent").innerHTML = html;
+      } else {
+        ecoPoints += score * 10; // 10 eco-points per correct answer
+        saveProgress();
+
+        showScreen('scoreScreen');
+        document.getElementById("scoreText").innerText =
+          `${currentUser}, your score is ${score}/${questions.length}. You earned ${score * 10} eco-points!`;
+        updateEcoUI();
+        updateScoreboard();
+      }
+    }
+
+    function answer(i) {
+      if (i === questions[currentQuestion].answer) score++;
+      currentQuestion++;
+      loadQuestion();
+    }
+
+    function completeChallenge(task, points) {
+      ecoPoints += points;
+      alert(`✅ Challenge Completed: ${task} (+${points} eco-points)`);
+      saveProgress();
+      updateEcoUI();
+    }
+
+    function updateEcoUI() {
+      document.getElementById("ecoPoints").innerText = ecoPoints;
+      const badgeDiv = document.getElementById("badges");
+      badgeDiv.innerHTML = "";
+
+      if (ecoPoints >= 50) badgeDiv.innerHTML += `<span class="badge">🥉 Bronze Badge</span>`;
+      if (ecoPoints >= 100) badgeDiv.innerHTML += `<span class="badge">🥈 Silver Badge</span>`;
+      if (ecoPoints >= 200) badgeDiv.innerHTML += `<span class="badge">🥇 Gold Badge</span>`;
+    }
+
+    function saveProgress() {
+      const existing = scores.find(s => s.name === currentUser);
+      if (existing) {
+        existing.marks = score;
+        existing.points = ecoPoints;
+      } else {
+        scores.push({ name: currentUser, marks: score, points: ecoPoints });
+      }
+      localStorage.setItem("scores", JSON.stringify(scores));
+    }
+
+    function updateScoreboard() {
+      let list = document.getElementById("scoreList");
+      list.innerHTML = "";
+      if (scores.length === 0) {
+        list.innerHTML = "<li>No students attempted test yet</li>";
+      } else {
+        scores.forEach(s => {
+          let li = document.createElement("li");
+          li.innerText = `${s.name}: ${s.marks}/${questions.length}, Eco-Points: ${s.points || 0}`;
+          list.appendChild(li);
+        });
+      }
+    }
+
+    function updateLeaderboard() {
+      let list = document.getElementById("leaderboardList");
+      list.innerHTML = "";
+      if (scores.length === 0) {
+        list.innerHTML = "<li>No scores yet</li>";
+      } else {
+        // Sort by eco-points
+        let sorted = [...scores].sort((a, b) => (b.points || 0) - (a.points || 0));
+        sorted.forEach((s, idx) => {
+          let li = document.createElement("li");
+          li.innerText = `#${idx + 1} ${s.name}: ${s.points || 0} eco-points`;
+          list.appendChild(li);
+        });
+      }
+    }
+  </script>
+</body>
+</html>
